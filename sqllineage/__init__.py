@@ -1,7 +1,7 @@
 import logging.config
 
 NAME = "sqllineage"
-VERSION = "1.1.4"
+VERSION = "100.0.0a"
 DEFAULT_LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -30,5 +30,5 @@ DEFAULT_LOGGING = {
 }
 logging.config.dictConfig(DEFAULT_LOGGING)
 
-STATIC_FOLDRE = "build"
+STATIC_FOLDER = "build"
 DEFAULT_PORT = 5000
