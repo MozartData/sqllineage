@@ -16,7 +16,7 @@ def _monkey_patch() -> None:
 _monkey_patch()
 
 NAME = "sqllineage"
-VERSION = "1.3.3"
+VERSION = "100.0.0a"
 DEFAULT_LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -46,8 +46,4 @@ DEFAULT_LOGGING = {
 logging.config.dictConfig(DEFAULT_LOGGING)
 
 STATIC_FOLDER = "build"
-DATA_FOLDER = os.environ.get(
-    "SQLLINEAGE_DIRECTORY", os.path.join(os.path.dirname(__file__), "data")
-)
-DEFAULT_HOST = "localhost"
 DEFAULT_PORT = 5000
