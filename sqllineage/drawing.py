@@ -9,10 +9,9 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from werkzeug.exceptions import InternalServerError
 
-from sqllineage import DATA_FOLDER, DEFAULT_HOST, DEFAULT_PORT
+from sqllineage import DEFAULT_PORT
 from sqllineage import STATIC_FOLDER
-from sqllineage.utils.constant import LineageLevel
-from sqllineage.utils.helpers import extract_sql_from_args
+from sqllineage.helpers import extract_sql_from_args
 
 logger = logging.getLogger(__name__)
 
