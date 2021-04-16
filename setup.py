@@ -48,7 +48,7 @@ setup(
     description="SQL Lineage Analysis Tool powered by Python",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/reata/sqllineage",
+    url="https://github.com/MozartData/sqllineage",
     packages=find_packages(exclude=("tests",)),
     package_data={"": [f"{STATIC_FOLDER}/*", f"{STATIC_FOLDER}/**/**/*", "data/**/*"]},
     include_package_data=True,
