@@ -6,6 +6,33 @@ from sqllineage.exceptions import SQLLineageException
 from sqllineage.helpers import escape_identifier_name
 
 
+class Database:
+    unknown = "<default>"
+
+    def __init__(self, name: str = unknown):
+        """
+        Data Class for Database
+
+        :param name: database name
+        """
+        self.raw_name = escape_identifier_name(name)
+
+    def __str__(self):
+        return self.raw_name.lower()
+
+    def __repr__(self):
+        return "Database: " + str(self)
+
+    def __eq__(self, other):
+        return type(self) is type(other) and str(self) == str(other)
+
+    def __hash__(self):
+        return hash(str(self))
+
+    def __bool__(self):
+        return str(self) != self.unknown
+
+
 class Schema:
     unknown = "<default>"
 
@@ -34,13 +61,22 @@ class Schema:
 
 
 class Table:
-    def __init__(self, name: str, schema: Schema = Schema()):
+    def __init__(self, name: str, schema: Schema = Schema(), database: Database = Database()):
         """
         Data Class for Table
 
         :param name: table name
         :param schema: schema as defined by :class:`Schema`
         """
+        if len(name.split(".")) == 3:
+            database_name, schema_name, table_name = name.split(".")
+            self.database = Database(database_name)
+            self.schema = Schema(schema_name)
+            self.raw_name = escape_identifier_name(table_name)
+            if schema:
+                warnings.warn("Name is in schema.table format, schema param is ignored")
+            if database:
+                warnings.warn("Name is in database.schema.table format, database param is ignored")
         if len(name.split(".")) == 2:
             schema_name, table_name = name.split(".")
             self.schema = Schema(schema_name)
@@ -54,6 +90,8 @@ class Table:
             raise SQLLineageException("Invalid format for table name: %s", name)
 
     def __str__(self):
+        if self.database:
+            return f"{self.database}.{self.schema}.{self.raw_name.lower()}"
         return f"{self.schema}.{self.raw_name.lower()}"
 
     def __repr__(self):
