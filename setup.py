@@ -7,7 +7,7 @@ import subprocess
 from setuptools import find_packages, setup
 from setuptools.command.egg_info import egg_info
 
-from sqllineage import NAME, STATIC_FOLDRE, VERSION
+from sqllineage import NAME, STATIC_FOLDER, VERSION
 
 with open("README.md", "r") as f:
     long_description = f.read()
