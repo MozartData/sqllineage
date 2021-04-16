@@ -79,11 +79,13 @@ class Table:
                 warnings.warn("Name is in database.schema.table format, database param is ignored")
         if len(name.split(".")) == 2:
             schema_name, table_name = name.split(".")
+            self.database = database
             self.schema = Schema(schema_name)
             self.raw_name = escape_identifier_name(table_name)
             if schema:
                 warnings.warn("Name is in schema.table format, schema param is ignored")
         elif "." not in name:
+            self.database = database
             self.schema = schema
             self.raw_name = escape_identifier_name(name)
         else:
@@ -110,6 +112,7 @@ class Table:
             if identifier.get_parent_name() is not None
             else Schema()
         )
+        database = Schema()
         return Table(identifier.get_real_name(), schema)
 
 
