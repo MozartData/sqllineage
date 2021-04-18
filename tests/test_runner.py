@@ -1,4 +1,5 @@
 from sqllineage.runner import LineageRunner
+from sqllineage.utils.constant import LineageLevel
 
 
 def test_runner_dummy():
@@ -9,3 +10,4 @@ insert overwrite table tab3 select * from tab2""",
     )
     assert str(runner)
     assert runner.to_cytoscape() is not None
+    assert runner.to_cytoscape(level=LineageLevel.COLUMN) is not None

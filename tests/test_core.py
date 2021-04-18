@@ -1,6 +1,5 @@
-from sqllineage.core import LineageResult
+from sqllineage.core.holders import StatementLineageHolder
 
 
 def test_dummy():
-    assert str(LineageResult()) == repr(LineageResult())
-    assert LineageResult() + LineageResult() is not None
+    assert str(StatementLineageHolder()) == repr(StatementLineageHolder())

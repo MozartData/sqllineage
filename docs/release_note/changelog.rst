@@ -2,6 +2,105 @@
 Changelog
 *********
 
+v1.3.3
+======
+:Date: December 26, 2021
+
+Enhancement
+-------------
+* smarter column-to-table resolution using query context (`#203 <https://github.com/reata/sqllineage/issues/203>`_)
+
+Bugfix
+-------------
+* column lineage for union operation (`#207 <https://github.com/reata/sqllineage/issues/207>`_)
+* subquery in where clause not parsed for table lineage (`#204 <https://github.com/reata/sqllineage/issues/204>`_)
+
+v1.3.2
+======
+:Date: December 12, 2021
+
+Enhancement
+-------------
+* support optional AS keyword in CTE (`#198 <https://github.com/reata/sqllineage/issues/198>`_)
+* support referring to a CTE in subsequent CTEs (`#196 <https://github.com/reata/sqllineage/issues/196>`_)
+* support for Redshift 'copy from' syntax (`#164 <https://github.com/reata/sqllineage/issues/164>`_)
+
+v1.3.1
+======
+:Date: December 5, 2021
+
+Enhancement
+-------------
+* test against Python 3.10 (`#186 <https://github.com/reata/sqllineage/issues/186>`_)
+
+Bugfix
+-------------
+* alias parsed as table name for column lineage using ANSI-89 Join (`#190 <https://github.com/reata/sqllineage/issues/190>`_)
+* CTE parsed as source table when referencing column from cte using alias (`#189 <https://github.com/reata/sqllineage/issues/189>`_)
+* window function with parameter parsed as two columns (`#184 <https://github.com/reata/sqllineage/issues/184>`_)
+
+v1.3.0
+======
+:Date: November 13, 2021
+
+Feature
+-------------
+* Column-Level Lineage (`#103 <https://github.com/reata/sqllineage/issues/103>`_)
+
+Bugfix
+-------------
+* SHOW CREATE TABLE parsed as target table (`#167 <https://github.com/reata/sqllineage/issues/167>`_)
+
+v1.2.4
+======
+:Date: June 14, 2021
+
+Enhancement
+-------------
+* highlight selected node and its ancestors as well as children recursively (`#156 <https://github.com/reata/sqllineage/issues/156>`_)
+* add support for database.schema.table as identifier name (`#153 <https://github.com/reata/sqllineage/issues/153>`_)
+* add support for swap_partitions_between_tables (`#152 <https://github.com/reata/sqllineage/issues/152>`_)
+
+v1.2.3
+======
+:Date: May 15, 2021
+
+Enhancement
+-------------
+* lineage API response exception handling (`#148 <https://github.com/reata/sqllineage/issues/148>`_)
+
+v1.2.2
+======
+:Date: May 5, 2021
+
+Bugfix
+-------------
+* resize dragger remain on the UI when drawer is closed (`#145 <https://github.com/reata/sqllineage/issues/145>`_)
+
+v1.2.1
+======
+:Date: May 3, 2021
+
+Enhancement
+-------------
+* option to specify hostname (`#142 <https://github.com/reata/sqllineage/issues/142>`_)
+* re-sizable directory tree drawer (`#140 <https://github.com/reata/sqllineage/issues/140>`_)
+* async loading for directory tree in frontend UI (`#138 <https://github.com/reata/sqllineage/issues/138>`_)
+
+v1.2.0
+======
+:Date: April 18, 2021
+
+Feature
+-------------
+* A Full Fledged Frontend Visualization App (`#118 <https://github.com/reata/sqllineage/issues/118>`_)
+* Use TPC-DS Queries as Visualization Example (`#116 <https://github.com/reata/sqllineage/issues/116>`_)
+
+Enhancement
+-------------
+* Unit Test Failure With sqlparse==0.3.0, update dependency to be >=0.3.1 (`#117 <https://github.com/reata/sqllineage/issues/117>`_)
+* contributing guide (`#14 <https://github.com/reata/sqllineage/issues/14>`_)
+
 v1.1.4
 ======
 :Date: March 9, 2021

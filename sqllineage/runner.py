@@ -1,14 +1,15 @@
 import logging
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import sqlparse
 from sqlparse.sql import Statement
 
-from sqllineage.combiners import combine
 from sqllineage.core import LineageAnalyzer
-from sqllineage.drawing import draw_lineage_graph
+from sqllineage.core.holders import SQLLineageHolder
+from sqllineage.core.models import Column, Table
 from sqllineage.io import to_cytoscape
-from sqllineage.models import Table
+from sqllineage.utils.constant import LineageLevel
+
 
 logger = logging.getLogger(__name__)
 
@@ -71,11 +72,11 @@ Target Tables:
     {intermediate_tables}"""
         if self._verbose:
             result = ""
-            for i, lineage_result in enumerate(self._lineage_results):
+            for i, holder in enumerate(self._stmt_holders):
                 stmt_short = statements[i].replace("\n", "")
                 if len(stmt_short) > 50:
                     stmt_short = stmt_short[:50] + "..."
-                content = str(lineage_result).replace("\n", "\n    ")
+                content = str(holder).replace("\n", "\n    ")
                 result += f"""Statement #{i + 1}: {stmt_short}
     {content}
 """
@@ -83,21 +84,14 @@ Target Tables:
         return combined
 
     @lazy_method
-    def to_cytoscape(self) -> List[Dict[str, Dict[str, str]]]:
+    def to_cytoscape(self, level=LineageLevel.TABLE) -> List[Dict[str, Dict[str, str]]]:
         """
         to turn the DAG into cytoscape format.
         """
-        return to_cytoscape(self._combined_lineage_result.lineage_graph)
-
-    def draw(self) -> None:
-        """
-        to draw the lineage directed graph
-        """
-        draw_options = self._draw_options
-        if draw_options.get("f") is None:
-            draw_options.pop("f", None)
-            draw_options["e"] = self._sql
-        return draw_lineage_graph(**draw_options)
+        if level == LineageLevel.COLUMN:
+            return to_cytoscape(self._sql_holder.column_lineage_graph, compound=True)
+        else:
+            return to_cytoscape(self._sql_holder.table_lineage_graph)
 
     @lazy_method
     def statements(self, **kwargs) -> List[str]:
@@ -120,30 +114,57 @@ Target Tables:
         """
         a list of source :class:`sqllineage.models.Table`
         """
-        return sorted(self._combined_lineage_result.source_tables, key=lambda x: str(x))
+        return sorted(self._sql_holder.source_tables, key=lambda x: str(x))
 
     @lazy_property
     def target_tables(self) -> List[Table]:
         """
         a list of target :class:`sqllineage.models.Table`
         """
-        return sorted(self._combined_lineage_result.target_tables, key=lambda x: str(x))
+        return sorted(self._sql_holder.target_tables, key=lambda x: str(x))
 
     @lazy_property
     def intermediate_tables(self) -> List[Table]:
         """
         a list of intermediate :class:`sqllineage.models.Table`
         """
+        return sorted(self._sql_holder.intermediate_tables, key=lambda x: str(x))
+
+    @lazy_method
+    def get_column_lineage(self, exclude_subquery=True) -> List[Tuple[Column, Column]]:
+        """
+        a list of column tuple :class:`sqllineage.models.Column`
+        """
+        # sort by target column, and then source column
         return sorted(
-            self._combined_lineage_result.intermediate_tables, key=lambda x: str(x)
+            self._sql_holder.get_column_lineage(exclude_subquery),
+            key=lambda x: (str(x[-1]), str(x[0])),
         )
+
+    def print_column_lineage(self) -> None:
+        """
+        print column level lineage to stdout
+        """
+        for path in self.get_column_lineage():
+            print(" <- ".join(str(col) for col in reversed(path)))
+
+    def print_table_lineage(self) -> None:
+        """
+        print table level lineage to stdout
+        """
+        print(str(self))
 
     def _eval(self):
         self._stmt = [
             s
-            for s in sqlparse.parse(self._sql.strip(), self._encoding)
+            for s in sqlparse.parse(
+                # first apply sqlparser formatting just to get rid of comments, which cause
+                # inconsistencies in parsing output
+                sqlparse.format(self._sql.strip(), self._encoding, strip_comments=True),
+                self._encoding,
+            )
             if s.token_first(skip_cm=True)
         ]
-        self._lineage_results = [LineageAnalyzer().analyze(stmt) for stmt in self._stmt]
-        self._combined_lineage_result = combine(*self._lineage_results)
+        self._stmt_holders = [LineageAnalyzer().analyze(stmt) for stmt in self._stmt]
+        self._sql_holder = SQLLineageHolder.of(*self._stmt_holders)
         self._evaluated = True

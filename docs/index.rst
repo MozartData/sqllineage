@@ -42,6 +42,7 @@ Behind the scene
    behind_the_scene/why_sqllineage
    behind_the_scene/how_sqllineage_work
    behind_the_scene/dos_and_donts
+   behind_the_scene/column-level_lineage_design
 
 :doc:`behind_the_scene/why_sqllineage`
     The motivation of writing SQLLineage
@@ -63,7 +64,7 @@ Basic concepts
 
    basic_concepts/lineage_runner
    basic_concepts/lineage_analyzer
-   basic_concepts/lineage_combiner
+   basic_concepts/lineage_holder
    basic_concepts/lineage_model
 
 :doc:`basic_concepts/lineage_runner`
@@ -72,8 +73,8 @@ Basic concepts
 :doc:`basic_concepts/lineage_analyzer`
     LineageAnalyzer: The core functionality of analyze one SQL statement
 
-:doc:`basic_concepts/lineage_combiner`
-    LineageCombiner: To combine all the atomic lineage result together into a Directed Acyclic Graph
+:doc:`basic_concepts/lineage_holder`
+    LineageCombiner: To hold lineage result at different level
 
 :doc:`basic_concepts/lineage_model`
     The data classes for SQLLineage
