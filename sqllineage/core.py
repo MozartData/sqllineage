@@ -150,7 +150,9 @@ class LineageAnalyzer:
                 pass
             else:
                 self._lineage_result.read.add(Table.create(sub_token))
-        elif isinstance(sub_token, IdentifierList):
+            return
+
+        if isinstance(sub_token, IdentifierList):
             # This is to support join in ANSI-89 syntax
             for token in sub_token.tokens:
                 # when real name and alias name are the same, it means subquery here
@@ -159,15 +161,22 @@ class LineageAnalyzer:
                     and token.get_real_name() != token.get_alias()
                 ):
                     self._lineage_result.read.add(Table.create(token))
-        elif isinstance(sub_token, Parenthesis):
+            return
+
+        if isinstance(sub_token, Parenthesis):
             # SELECT col1 FROM (SELECT col2 FROM tab1), the subquery will be parsed as Parenthesis
             # This syntax without alias for subquery is invalid in MySQL, while valid for SparkSQL
-            pass
-        else:
-            raise SQLLineageException(
-                "An Identifier is expected, got %s[value: %s] instead"
-                % (type(sub_token).__name__, sub_token)
-            )
+            return
+
+        if isinstance(sub_token, Function) and len(sub_token.tokens) == 2:
+            if isinstance(sub_token.tokens[1], Parenthesis) and sub_token.tokens[0].value.lower() == "table":
+                # Punt on finding stuff inside this wrapper.
+                return
+
+        raise SQLLineageException(
+            "An Identifier is expected, got %s[value: %s] instead"
+            % (type(sub_token).__name__, sub_token)
+        )
 
     def _handle_target_table_token(self, sub_token: TokenList) -> None:
         if isinstance(sub_token, Function):
