@@ -45,6 +45,12 @@ def test_create_as_dwh():
     helper("CREATE TABLE tab1 AS SELECT * FROM foo.bar.tab2", {"foo.bar.tab2"}, {"tab1"})
 
 
+def test_date_table():
+    helper("""
+        WITH spine as (select 1 as the_date from table(generator(rowcount => 10000)) where the_date < 2)
+        select the_date from spine join mozart.foo f on spine.the_date = f.the_date
+    """, {"mozart.foo"}, {})
+
 def test_create_like():
     assert_table_lineage_equal("CREATE TABLE tab1 LIKE tab2", {"tab2"}, {"tab1"})
 
