@@ -41,6 +41,10 @@ def test_create_as():
     )
 
 
+def test_create_as_dwh():
+    helper("CREATE TABLE tab1 AS SELECT * FROM foo.bar.tab2", {"foo.bar.tab2"}, {"tab1"})
+
+
 def test_create_like():
     assert_table_lineage_equal("CREATE TABLE tab1 LIKE tab2", {"tab2"}, {"tab1"})
 
