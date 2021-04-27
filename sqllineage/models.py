@@ -1,6 +1,7 @@
 import warnings
 
 from sqlparse.sql import Identifier
+from sqlparse import tokens
 
 from sqllineage.exceptions import SQLLineageException
 from sqllineage.helpers import escape_identifier_name
@@ -77,7 +78,7 @@ class Table:
                 warnings.warn("Name is in schema.table format, schema param is ignored")
             if database:
                 warnings.warn("Name is in database.schema.table format, database param is ignored")
-        if len(name.split(".")) == 2:
+        elif len(name.split(".")) == 2:
             schema_name, table_name = name.split(".")
             self.database = database
             self.schema = Schema(schema_name)
@@ -107,13 +108,19 @@ class Table:
 
     @staticmethod
     def create(identifier: Identifier):
+        if len(identifier.tokens) == 5:
+            if identifier.tokens[1].match(tokens.Punctuation, '.') and identifier.tokens[3].match(tokens.Punctuation, '.'):
+                database = Database(identifier.tokens[0].value)
+                schema = Schema(identifier.tokens[2].value)
+                table_name = identifier.tokens[4].value
+                return Table(table_name, schema, database)
         schema = (
             Schema(identifier.get_parent_name())
             if identifier.get_parent_name() is not None
             else Schema()
         )
-        database = Schema()
-        return Table(identifier.get_real_name(), schema)
+        database = Database()
+        return Table(identifier.get_real_name(), schema, database)
 
 
 class Partition:

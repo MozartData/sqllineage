@@ -1,7 +1,7 @@
 import logging.config
 
 NAME = "sqllineage"
-VERSION = "100.0.0a"
+VERSION = "100.0.3a"
 DEFAULT_LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
