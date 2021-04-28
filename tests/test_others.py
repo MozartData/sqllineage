@@ -52,54 +52,13 @@ def test_date_table():
     """, {"mozart.foo"}, {})
 
 
-def test_another_date_table():
-    sql = """
-        -- Pick a reasonable starting date for the given business
-        -- Ends one year from today
-        with
-        date_spine as (
-          select
-            dateadd('day', seq4(), '2020-01-01'::date)::date as the_date
-          from
-            table
-              (generator(rowcount => 10000))
-            where the_date <= dateadd('year', 1, current_date())
-        )
-        select
-          -- dates
-          the_date AS "date", -- for backwards compatibility
-          the_date,
-          dateadd('day', -1, the_date) as lag_date,
-          dateadd('week', -1, the_date) as lag_week,
-          dateadd('month', -1, the_date) as lag_month,
-          dateadd('year', -1, the_date) as lag_year,
-          last_day(the_date, 'week') AS eow,
-          last_day(the_date, 'month') AS eom,
-          last_day(the_date, 'quarter') AS eoq,
-          last_day(the_date, 'year')  AS eoy,
-          -- numbers
-          date_part('year', the_date) as the_year,
-          date_part('month', the_date) as the_month,
-          date_part('day', the_date) as dom,
-          date_part('doy', the_date) as doy,
-          date_part('dow_iso', the_date) as dow,
-          date_part('week', the_date) as the_week,
-          date_part('quarter', the_date) as the_quarter,
-          -- bools
-          case when the_date = current_date() then true else false end as is_latest_date,
-          case when the_date > current_date() then true else false end as is_future_date,
-          case when date_part('dow_iso', the_date) < 6 then true else false end as is_weekday,
-          case when the_date = last_day(the_date, 'week') then true else false end as is_eow,
-          case when the_date = last_day(the_date, 'month') then true else false end as is_eom,
-          case when the_date = last_day(the_date, 'quarter') then true else false end as is_eoq,
-          case when the_date = last_day(the_date, 'year') then true else false end as is_eoy,
-          case when date_part('year', the_date) % 4 = 0 then true else false end as is_leap_year,
-          null as is_holiday,
-          null as is_mozart_holiday,
-          -- names
-          dayname(the_date) as day_name,
-          null as holiday_name
-        from date_spine"""
+def test_table_generator_no_space_before_parenthesis():
+    sql = """select 1 from table(generator(rowcount => 10000)) where 1 <= 2"""
+    helper(sql, {}, {})
+
+
+def test_table_generator_with_space_before_parenthesis():
+    sql = """select 1 from table (generator(rowcount => 10000)) where 1 <= 2"""
     helper(sql, {}, {})
 
 
