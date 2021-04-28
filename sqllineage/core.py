@@ -111,6 +111,7 @@ class LineageAnalyzer:
         source_table_token_flag = False
         target_table_token_flag = False
         temp_table_token_flag = False
+        print(f"{token=}")
         for sub_token in token.tokens:
             if self.__token_negligible_before_tablename(sub_token):
                 continue
@@ -131,6 +132,7 @@ class LineageAnalyzer:
                     temp_table_token_flag = True
                 continue
 
+            print(f"    {target_table_token_flag=} {sub_token=}")
             if source_table_token_flag:
                 self._handle_source_table_token(sub_token)
                 source_table_token_flag = False
@@ -190,7 +192,9 @@ class LineageAnalyzer:
             self._lineage_result.write.add(
                 Table.create(sub_token.token_first(skip_cm=True))
             )
-        elif isinstance(sub_token, Comparison):
+            return
+
+        if isinstance(sub_token, Comparison):
             # create table tab1 like tab2, tab1 like tab2 will be parsed as Comparison
             # referring https://github.com/andialbrecht/sqlparse/issues/543 for further information
             if not (
@@ -203,17 +207,20 @@ class LineageAnalyzer:
                 )
             self._lineage_result.write.add(Table.create(sub_token.left))
             self._lineage_result.read.add(Table.create(sub_token.right))
-        else:
-            if not isinstance(sub_token, Identifier):
-                raise SQLLineageException(
-                    "An Identifier is expected, got %s[value: %s] instead"
-                    % (type(sub_token).__name__, sub_token)
-                )
-            if sub_token.token_first(skip_cm=True).ttype is Number.Integer:
-                # Special Handling for Spark Bucket Table DDL
-                pass
-            else:
-                self._lineage_result.write.add(Table.create(sub_token))
+            return
+
+        if not isinstance(sub_token, Identifier):
+            print(f"{sub_token= }")
+            raise SQLLineageException(
+                "An Identifier is expected, got %s[value: %s] instead"
+                % (type(sub_token).__name__, sub_token)
+            )
+
+        if sub_token.token_first(skip_cm=True).ttype is Number.Integer:
+            # Special Handling for Spark Bucket Table DDL
+            return
+
+        self._lineage_result.write.add(Table.create(sub_token))
 
     def _handle_temp_table_token(self, sub_token: TokenList) -> None:
         if isinstance(sub_token, Identifier):
