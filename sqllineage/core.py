@@ -111,7 +111,7 @@ class LineageAnalyzer:
         source_table_token_flag = False
         target_table_token_flag = False
         temp_table_token_flag = False
-        print(f"{token=}")
+        prev_token_is_table = False
         for sub_token in token.tokens:
             if self.__token_negligible_before_tablename(sub_token):
                 continue
@@ -128,11 +128,17 @@ class LineageAnalyzer:
                     source_table_token_flag = True
                 elif sub_token.normalized in TARGET_TABLE_TOKENS:
                     target_table_token_flag = True
+                    if sub_token.normalized == 'TABLE':
+                        prev_token_is_table = True
                 elif sub_token.normalized in TEMP_TABLE_TOKENS:
                     temp_table_token_flag = True
                 continue
 
-            print(f"    {target_table_token_flag=} {sub_token=}")
+            if prev_token_is_table:
+                if isinstance(sub_token, Parenthesis):
+                    prev_token_is_table = False
+                    target_table_token_flag = False
+
             if source_table_token_flag:
                 self._handle_source_table_token(sub_token)
                 source_table_token_flag = False
@@ -171,7 +177,7 @@ class LineageAnalyzer:
             return
 
         if isinstance(sub_token, Function) and len(sub_token.tokens) == 2:
-            if isinstance(sub_token.tokens[1], Parenthesis) and sub_token.tokens[0].value.lower() == "table":
+            if isinstance(sub_token.tokens[1], Parenthesis) and sub_token.tokens[0].normalized.upper() == "TABLE":
                 # Punt on finding stuff inside this wrapper.
                 return
 
@@ -210,7 +216,6 @@ class LineageAnalyzer:
             return
 
         if not isinstance(sub_token, Identifier):
-            print(f"{sub_token= }")
             raise SQLLineageException(
                 "An Identifier is expected, got %s[value: %s] instead"
                 % (type(sub_token).__name__, sub_token)
