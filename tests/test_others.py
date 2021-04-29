@@ -66,6 +66,14 @@ def test_table_generator_with_space_before_parenthesis():
     helper(sql, {}, {})
 
 
+def test_table_generator_new_regression():
+    helper("""WITH date_series as (
+         select DATEADD(DAY, SEQ4(), '1970-01-01') AS date_value
+           FROM TABLE(GENERATOR(rowcount => 10000)) -- Comment breaking parser
+       )
+       select date_value as date from date_series""", {}, {})
+
+
 def test_create_like():
     helper("CREATE TABLE tab1 LIKE tab2", {"tab2"}, {"tab1"})
 

@@ -176,8 +176,14 @@ class LineageAnalyzer:
             # This syntax without alias for subquery is invalid in MySQL, while valid for SparkSQL
             return
 
-        if isinstance(sub_token, Function) and len(sub_token.tokens) == 2:
-            if isinstance(sub_token.tokens[1], Parenthesis) and sub_token.tokens[0].normalized.upper() == "TABLE":
+        # If there is a newline immediately preceded by comments and whitespace, trim all the comments and whitespace
+        # or else we might throw an unnecessary exception.
+        tokens_to_trim = sub_token.tokens
+        while len(tokens_to_trim) > 0 and self.__token_negligible_before_tablename(tokens_to_trim[-1]):
+            tokens_to_trim = tokens_to_trim[:-1]
+
+        if isinstance(sub_token, Function) and len(tokens_to_trim) == 2:
+            if isinstance(tokens_to_trim[1], Parenthesis) and tokens_to_trim[0].normalized.upper() == "TABLE":
                 # Punt on finding stuff inside this wrapper.
                 return
 
