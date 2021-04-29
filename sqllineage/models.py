@@ -108,7 +108,7 @@ class Table:
 
     @staticmethod
     def create(identifier: Identifier):
-        if len(identifier.tokens) == 5:
+        if len(identifier.tokens) >= 5:
             if identifier.tokens[1].match(tokens.Punctuation, '.') and identifier.tokens[3].match(tokens.Punctuation, '.'):
                 database = Database(identifier.tokens[0].value)
                 schema = Schema(identifier.tokens[2].value)
