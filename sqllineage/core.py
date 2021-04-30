@@ -21,7 +21,6 @@ SOURCE_TABLE_TOKENS = (
     # inspired by https://github.com/andialbrecht/sqlparse/blob/master/sqlparse/keywords.py
     r"((LEFT\s+|RIGHT\s+|FULL\s+)?(INNER\s+|OUTER\s+|STRAIGHT\s+)?|(CROSS\s+|NATURAL\s+)?)?JOIN",
 )
-TARGET_TABLE_TOKENS = ("INTO", "OVERWRITE", "TABLE", "VIEW", "UPDATE")
 TEMP_TABLE_TOKENS = ("WITH",)
 
 
@@ -109,7 +108,6 @@ class LineageAnalyzer:
 
     def _extract_from_dml(self, token: TokenList) -> None:
         source_table_token_flag = False
-        target_table_token_flag = False
         temp_table_token_flag = False
         prev_token_is_table = False
         for sub_token in token.tokens:
@@ -119,6 +117,8 @@ class LineageAnalyzer:
             if isinstance(sub_token, TokenList):
                 self._extract_from_dml(sub_token)
 
+            if sub_token.normalized == 'TABLE':
+                prev_token_is_table = True
             if sub_token.is_keyword:
                 if any(
                     re.match(regex, sub_token.normalized)
@@ -126,10 +126,6 @@ class LineageAnalyzer:
                 ) and not isinstance(sub_token.parent.parent, Function):
                     # SELECT trim(BOTH '  ' FROM '  abc  '); Here FROM is not a source table flag
                     source_table_token_flag = True
-                elif sub_token.normalized in TARGET_TABLE_TOKENS:
-                    target_table_token_flag = True
-                    if sub_token.normalized == 'TABLE':
-                        prev_token_is_table = True
                 elif sub_token.normalized in TEMP_TABLE_TOKENS:
                     temp_table_token_flag = True
                 continue
@@ -137,14 +133,10 @@ class LineageAnalyzer:
             if prev_token_is_table:
                 if isinstance(sub_token, Parenthesis):
                     prev_token_is_table = False
-                    target_table_token_flag = False
 
             if source_table_token_flag:
                 self._handle_source_table_token(sub_token)
                 source_table_token_flag = False
-            elif target_table_token_flag:
-                self._handle_target_table_token(sub_token)
-                target_table_token_flag = False
             elif temp_table_token_flag:
                 self._handle_temp_table_token(sub_token)
                 temp_table_token_flag = False
@@ -191,47 +183,6 @@ class LineageAnalyzer:
             "An Identifier is expected, got %s[value: %s] instead"
             % (type(sub_token).__name__, sub_token)
         )
-
-    def _handle_target_table_token(self, sub_token: TokenList) -> None:
-        if isinstance(sub_token, Function):
-            # insert into tab (col1, col2) values (val1, val2); Here tab (col1, col2) will be parsed as Function
-            # referring https://github.com/andialbrecht/sqlparse/issues/483 for further information
-            if not isinstance(sub_token.token_first(skip_cm=True), Identifier):
-                raise SQLLineageException(
-                    "An Identifier is expected, got %s[value: %s] instead"
-                    % (type(sub_token).__name__, sub_token)
-                )
-            self._lineage_result.write.add(
-                Table.create(sub_token.token_first(skip_cm=True))
-            )
-            return
-
-        if isinstance(sub_token, Comparison):
-            # create table tab1 like tab2, tab1 like tab2 will be parsed as Comparison
-            # referring https://github.com/andialbrecht/sqlparse/issues/543 for further information
-            if not (
-                isinstance(sub_token.left, Identifier)
-                and isinstance(sub_token.right, Identifier)
-            ):
-                raise SQLLineageException(
-                    "An Identifier is expected, got %s[value: %s] instead"
-                    % (type(sub_token).__name__, sub_token)
-                )
-            self._lineage_result.write.add(Table.create(sub_token.left))
-            self._lineage_result.read.add(Table.create(sub_token.right))
-            return
-
-        if not isinstance(sub_token, Identifier):
-            raise SQLLineageException(
-                "An Identifier is expected, got %s[value: %s] instead"
-                % (type(sub_token).__name__, sub_token)
-            )
-
-        if sub_token.token_first(skip_cm=True).ttype is Number.Integer:
-            # Special Handling for Spark Bucket Table DDL
-            return
-
-        self._lineage_result.write.add(Table.create(sub_token))
 
     def _handle_temp_table_token(self, sub_token: TokenList) -> None:
         if isinstance(sub_token, Identifier):

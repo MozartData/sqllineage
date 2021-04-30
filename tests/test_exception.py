@@ -9,11 +9,6 @@ def test_select_without_table():
         LineageRunner("select * from where foo='bar'")._eval()
 
 
-def test_insert_without_table():
-    with pytest.raises(SQLLineageException):
-        LineageRunner("insert into select * from foo")._eval()
-
-
 def test_with_cte_without_table():
     with pytest.raises(SQLLineageException):
         LineageRunner(
