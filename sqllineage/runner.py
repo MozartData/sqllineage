@@ -6,7 +6,6 @@ from sqlparse.sql import Statement
 
 from sqllineage.combiners import combine
 from sqllineage.core import LineageAnalyzer
-from sqllineage.drawing import draw_lineage_graph
 from sqllineage.io import to_cytoscape
 from sqllineage.models import Table
 
