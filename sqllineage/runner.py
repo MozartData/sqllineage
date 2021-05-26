@@ -88,16 +88,6 @@ Target Tables:
         """
         return to_cytoscape(self._combined_lineage_result.lineage_graph)
 
-    def draw(self) -> None:
-        """
-        to draw the lineage directed graph
-        """
-        draw_options = self._draw_options
-        if draw_options.get("f") is None:
-            draw_options.pop("f", None)
-            draw_options["e"] = self._sql
-        return draw_lineage_graph(**draw_options)
-
     @lazy_method
     def statements(self, **kwargs) -> List[str]:
         """

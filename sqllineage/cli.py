@@ -46,17 +46,6 @@ def main(args=None) -> None:
         logging.warning(
             "Both -e and -f options are specified. -e option will be ignored"
         )
-    if args.f or args.e:
-        sql = extract_sql_from_args(args)
-        runner = LineageRunner(
-            sql,
-            verbose=args.verbose,
-            draw_options={"p": args.p, "f": args.f if args.f else None},
-        )
-        if args.graph_visualization:
-            runner.draw()
-        else:
-            print(runner)
     else:
         parser.print_help()
 
