@@ -1,6 +1,12 @@
 import re
 from typing import Dict, List, Union
 
+from sqllineage.core.handlers.base import NextTokenBaseHandler
+from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.core.models import Column, Path, SubQuery, Table
+from sqllineage.exceptions import SQLLineageException
+from sqllineage.utils.constant import EdgeType
+from sqllineage.utils.sqlparse import get_subquery_parentheses
 from sqlparse.sql import (
     Case,
     Function,
@@ -12,12 +18,7 @@ from sqlparse.sql import (
 )
 from sqlparse.tokens import Literal, Wildcard
 
-from sqllineage.core.handlers.base import NextTokenBaseHandler
-from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import Column, Path, SubQuery, Table
-from sqllineage.exceptions import SQLLineageException
-from sqllineage.utils.constant import EdgeType
-from sqllineage.utils.sqlparse import get_subquery_parentheses
+print(f"***************************************helo")
 
 
 class SourceHandler(NextTokenBaseHandler):
@@ -56,14 +57,21 @@ class SourceHandler(NextTokenBaseHandler):
             self._handle_table(token, holder)
 
     def _handle_table(self, token: Token, holder: SubQueryLineageHolder) -> None:
-        if isinstance(token, Identifier):
+        print(f"{token}**********************************")
+        if isinstance(token, Function):
+            # insert into tab (col1, col2) values (val1, val2); Here tab (col1, col2) will be parsed as Function
+            # referring https://github.com/andialbrecht/sqlparse/issues/483 for further information
+            if not isinstance(token.token_first(skip_cm=True), Identifier):
+                raise SQLLineageException(
+                    "An Identifier is expected, got %s[value: %s] instead." % (type(token).__name__, token)
+                )
+            holder.add_write(Table.of(token.token_first(skip_cm=True)))
+        elif isinstance(token, Identifier):
             self.tables.append(self._get_dataset_from_identifier(token, holder))
         elif isinstance(token, IdentifierList):
             # This is to support join in ANSI-89 syntax
             for identifier in token.get_sublists():
-                self.tables.append(
-                    self._get_dataset_from_identifier(identifier, holder)
-                )
+                self.tables.append(self._get_dataset_from_identifier(identifier, holder))
         elif isinstance(token, Parenthesis):
             # SELECT col1 FROM (SELECT col2 FROM tab1), the subquery will be parsed as Parenthesis
             # This syntax without alias for subquery is invalid in MySQL, while valid for SparkSQL
@@ -72,8 +80,7 @@ class SourceHandler(NextTokenBaseHandler):
             self.tables.append(Path(token.value))
         else:
             raise SQLLineageException(
-                "An Identifier is expected, got %s[value: %s] instead."
-                % (type(token).__name__, token)
+                "An Identifier is expected, got %s[value: %s] instead." % (type(token).__name__, token)
             )
 
     def _handle_column(self, token: Token) -> None:
@@ -81,11 +88,7 @@ class SourceHandler(NextTokenBaseHandler):
         if isinstance(token, column_token_types) or token.ttype is Wildcard:
             column_tokens = [token]
         elif isinstance(token, IdentifierList):
-            column_tokens = [
-                sub_token
-                for sub_token in token.tokens
-                if isinstance(sub_token, column_token_types)
-            ]
+            column_tokens = [sub_token for sub_token in token.tokens if isinstance(sub_token, column_token_types)]
         else:
             # SELECT constant value will end up here
             column_tokens = []
@@ -97,9 +100,7 @@ class SourceHandler(NextTokenBaseHandler):
             holder.add_read(tbl)
         self.union_barriers.append((len(self.columns), len(self.tables)))
         for i, (col_barrier, tbl_barrier) in enumerate(self.union_barriers):
-            prev_col_barrier, prev_tbl_barrier = (
-                (0, 0) if i == 0 else self.union_barriers[i - 1]
-            )
+            prev_col_barrier, prev_tbl_barrier = (0, 0) if i == 0 else self.union_barriers[i - 1]
             col_grp = self.columns[prev_col_barrier:col_barrier]
             tbl_grp = self.tables[prev_tbl_barrier:tbl_barrier]
             tgt_tbl = None
@@ -110,9 +111,7 @@ class SourceHandler(NextTokenBaseHandler):
             if tgt_tbl:
                 for tgt_col in col_grp:
                     tgt_col.parent = tgt_tbl
-                    for src_col in tgt_col.to_source_columns(
-                        self._get_alias_mapping_from_table_group(tbl_grp, holder)
-                    ):
+                    for src_col in tgt_col.to_source_columns(self._get_alias_mapping_from_table_group(tbl_grp, holder)):
                         holder.add_column_lineage(src_col, tgt_col)
 
     @classmethod
@@ -160,10 +159,6 @@ class SourceHandler(NextTokenBaseHandler):
                 for src, tgt, attr in holder.graph.edges(data=True)
                 if attr.get("type") == EdgeType.HAS_ALIAS and src in table_group
             },
-            **{
-                table.raw_name: table
-                for table in table_group
-                if isinstance(table, Table)
-            },
+            **{table.raw_name: table for table in table_group if isinstance(table, Table)},
             **{str(table): table for table in table_group if isinstance(table, Table)},
         }
