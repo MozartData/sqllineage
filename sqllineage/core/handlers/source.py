@@ -56,7 +56,19 @@ class SourceHandler(NextTokenBaseHandler):
             self._handle_table(token, holder)
 
     def _handle_table(self, token: Token, holder: SubQueryLineageHolder) -> None:
-        if isinstance(token, Identifier):
+        if isinstance(token, Function):
+            # insert into tab (col1, col2) values (val1, val2); Here tab (col1, col2) will be parsed as Function
+            # referring https://github.com/andialbrecht/sqlparse/issues/483 for further information
+            if not isinstance(token.token_first(skip_cm=True), Identifier):
+                raise SQLLineageException(
+                    "An Identifier is expected, got %s[value: %s] instead." % (type(token).__name__, token)
+                )
+            for child_token in list(token.flatten()):
+                if child_token.value == "table":
+                    break
+            else:
+                holder.add_write(Table.of(token.token_first(skip_cm=True)))
+        elif isinstance(token, Identifier):
             self.tables.append(self._get_dataset_from_identifier(token, holder))
         elif isinstance(token, IdentifierList):
             # This is to support join in ANSI-89 syntax
