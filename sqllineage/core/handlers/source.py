@@ -18,8 +18,6 @@ from sqlparse.sql import (
 )
 from sqlparse.tokens import Literal, Wildcard
 
-print(f"***************************************helo")
-
 
 class SourceHandler(NextTokenBaseHandler):
     """Source Table & Column Handler."""
@@ -57,7 +55,6 @@ class SourceHandler(NextTokenBaseHandler):
             self._handle_table(token, holder)
 
     def _handle_table(self, token: Token, holder: SubQueryLineageHolder) -> None:
-        print(f"{token}**********************************")
         if isinstance(token, Function):
             # insert into tab (col1, col2) values (val1, val2); Here tab (col1, col2) will be parsed as Function
             # referring https://github.com/andialbrecht/sqlparse/issues/483 for further information
