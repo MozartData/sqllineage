@@ -20,15 +20,20 @@ class TargetHandler(NextTokenBaseHandler):
             # referring https://github.com/andialbrecht/sqlparse/issues/483 for further information
             if not isinstance(token.token_first(skip_cm=True), Identifier):
                 raise SQLLineageException(
-                    "An Identifier is expected, got %s[value: %s] instead." % (type(token).__name__, token)
+                    "An Identifier is expected, got %s[value: %s] instead."
+                    % (type(token).__name__, token)
                 )
             holder.add_write(Table.of(token.token_first(skip_cm=True)))
         elif isinstance(token, Comparison):
             # create table tab1 like tab2, tab1 like tab2 will be parsed as Comparison
             # referring https://github.com/andialbrecht/sqlparse/issues/543 for further information
-            if not (isinstance(token.left, Identifier) and isinstance(token.right, Identifier)):
+            if not (
+                isinstance(token.left, Identifier)
+                and isinstance(token.right, Identifier)
+            ):
                 raise SQLLineageException(
-                    "An Identifier is expected, got %s[value: %s] instead." % (type(token).__name__, token)
+                    "An Identifier is expected, got %s[value: %s] instead."
+                    % (type(token).__name__, token)
                 )
             holder.add_write(Table.of(token.left))
             holder.add_read(Table.of(token.right))
@@ -41,7 +46,8 @@ class TargetHandler(NextTokenBaseHandler):
         else:
             if not isinstance(token, Identifier):
                 raise SQLLineageException(
-                    "An Identifier is expected, got %s[value: %s] instead." % (type(token).__name__, token)
+                    "An Identifier is expected, got %s[value: %s] instead."
+                    % (type(token).__name__, token)
                 )
             if token.token_first(skip_cm=True).ttype is Number.Integer:
                 # Special Handling for Spark Bucket Table DDL
