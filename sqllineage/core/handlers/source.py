@@ -62,7 +62,11 @@ class SourceHandler(NextTokenBaseHandler):
                 raise SQLLineageException(
                     "An Identifier is expected, got %s[value: %s] instead." % (type(token).__name__, token)
                 )
-            holder.add_write(Table.of(token.token_first(skip_cm=True)))
+            for child_token in list(token.flatten()):
+                if child_token.value == "table":
+                    break
+            else:
+                holder.add_write(Table.of(token.token_first(skip_cm=True)))
         elif isinstance(token, Identifier):
             self.tables.append(self._get_dataset_from_identifier(token, holder))
         elif isinstance(token, IdentifierList):
