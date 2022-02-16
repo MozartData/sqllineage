@@ -1,10 +1,9 @@
-from sqlparse.sql import Comparison, Function, Identifier, Token
-from sqlparse.tokens import Literal, Number
-
 from sqllineage.core.handlers.base import NextTokenBaseHandler
 from sqllineage.core.holders import SubQueryLineageHolder
 from sqllineage.core.models import Path, Table
 from sqllineage.exceptions import SQLLineageException
+from sqlparse.sql import Comparison, Function, Identifier, Parenthesis, Token
+from sqlparse.tokens import Literal, Number
 
 
 class TargetHandler(NextTokenBaseHandler):
@@ -40,6 +39,10 @@ class TargetHandler(NextTokenBaseHandler):
             holder.add_read(Table.of(token.right))
         elif token.ttype == Literal.String.Single:
             holder.add_write(Path(token.value))
+        elif isinstance(token, Parenthesis):
+            for sublist in token.get_sublists():
+                if isinstance(sublist.token_first, Identifier):
+                    holder.add_write(Table.of(sublist.token_first(skip_cm=True)))
         else:
             if not isinstance(token, Identifier):
                 raise SQLLineageException(
