@@ -203,7 +203,6 @@ class Column:
     @staticmethod
     def of(token: Token):
         if isinstance(token, Identifier):
-            print(f"Alias: {token.get_alias()}")
             alias = token.get_alias()
             if alias:
                 # handle column alias, including alias for column name or Case, Function
