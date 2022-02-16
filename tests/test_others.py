@@ -41,43 +41,6 @@ def test_create_as():
     )
 
 
-def test_create_as_dwh():
-    helper("CREATE TABLE tab1 AS SELECT * FROM foo.bar.tab2", {"foo.bar.tab2"}, {"tab1"})
-
-
-def test_another_three_tiered_example():
-    sql = """SELECT 1 as output_column
-        FROM FOO.GITHUB.LABEL b
-        LEFT JOIN FOO.GITHUB.PULL_REQUEST c ON c.ID = b.ID
-        LEFT JOIN ( SELECT com.REPOSITORY_ID as ID FROM FOO.GITHUB.COMMIT com )
-        as mp ON mp.ID = b.ID"""
-    helper(sql, {"foo.github.label", "foo.github.pull_request", "foo.github.commit"}, {})
-
-def test_date_table():
-    helper("""
-        WITH spine as (select 1 as the_date from table(generator(rowcount => 10000)) where the_date < 2)
-        select the_date from spine join mozart.foo f on spine.the_date = f.the_date
-    """, {"mozart.foo"}, {})
-
-
-def test_table_generator_no_space_before_parenthesis():
-    sql = """select 1 from table(generator(rowcount => 10000)) where 1 <= 2"""
-    helper(sql, {}, {})
-
-
-def test_table_generator_with_space_before_parenthesis():
-    sql = """select 1 from table (generator(rowcount => 10000)) where 1 <= 2"""
-    helper(sql, {}, {})
-
-
-def test_table_generator_new_regression():
-    helper("""WITH date_series as (
-         select DATEADD(DAY, SEQ4(), '1970-01-01') AS date_value
-           FROM TABLE(GENERATOR(rowcount => 10000)) -- Comment breaking parser
-       )
-       select date_value as date from date_series""", {}, {})
-
-
 def test_create_like():
     assert_table_lineage_equal("CREATE TABLE tab1 LIKE tab2", {"tab2"}, {"tab1"})
 

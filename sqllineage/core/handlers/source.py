@@ -61,7 +61,8 @@ class SourceHandler(NextTokenBaseHandler):
             # referring https://github.com/andialbrecht/sqlparse/issues/483 for further information
             if not isinstance(token.token_first(skip_cm=True), Identifier):
                 raise SQLLineageException(
-                    "An Identifier is expected, got %s[value: %s] instead." % (type(token).__name__, token)
+                    "An Identifier is expected, got %s[value: %s] instead."
+                    % (type(token).__name__, token)
                 )
             for child_token in list(token.flatten()):
                 if child_token.value == "table":

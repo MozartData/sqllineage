@@ -5,6 +5,9 @@ import sqlparse
 from sqlparse.sql import Statement
 
 from sqllineage.core import LineageAnalyzer
+from sqllineage.core.holders import SQLLineageHolder
+from sqllineage.core.models import Column, Table
+from sqllineage.drawing import draw_lineage_graph
 from sqllineage.io import to_cytoscape
 from sqllineage.utils.constant import LineageLevel
 
@@ -90,6 +93,16 @@ Target Tables:
             return to_cytoscape(self._sql_holder.column_lineage_graph, compound=True)
         else:
             return to_cytoscape(self._sql_holder.table_lineage_graph)
+
+    def draw(self) -> None:
+        """
+        to draw the lineage directed graph
+        """
+        draw_options = self._draw_options
+        if draw_options.get("f") is None:
+            draw_options.pop("f", None)
+            draw_options["e"] = self._sql
+        return draw_lineage_graph(**draw_options)
 
     @lazy_method
     def statements(self, **kwargs) -> List[str]:

@@ -1,5 +1,4 @@
 import logging.config
-import os
 
 
 def _monkey_patch() -> None:

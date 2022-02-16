@@ -1,8 +1,5 @@
 import os
 import platform
-import shlex
-import shutil
-import subprocess
 
 from setuptools import find_packages, setup
 from setuptools.command.egg_info import egg_info
@@ -28,7 +25,7 @@ class EggInfoWithJS(egg_info):
         if os.path.exists(static_path) or "READTHEDOCS" in os.environ:
             pass
         else:
-            use_shell = True if platform.system() == "Windows" else False
+            use_shell = True if platform.system() == "Windows" else False  # noqa: F841
         super().run()
 
 
