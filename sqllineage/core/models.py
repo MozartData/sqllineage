@@ -1,6 +1,10 @@
 import warnings
 from typing import Dict, List, Optional, Set, Union
 
+from sqllineage.exceptions import SQLLineageException
+from sqllineage.utils.entities import ColumnQualifierTuple
+from sqllineage.utils.helpers import escape_identifier_name
+from sqllineage.utils.sqlparse import get_parameters
 from sqlparse import tokens as T
 from sqlparse.engine import grouping
 from sqlparse.sql import (
@@ -15,11 +19,6 @@ from sqlparse.sql import (
     TokenList,
 )
 from sqlparse.utils import imt
-
-from sqllineage.exceptions import SQLLineageException
-from sqllineage.utils.entities import ColumnQualifierTuple
-from sqllineage.utils.helpers import escape_identifier_name
-from sqllineage.utils.sqlparse import get_parameters
 
 
 class Schema:
@@ -204,6 +203,7 @@ class Column:
     @staticmethod
     def of(token: Token):
         if isinstance(token, Identifier):
+            print(f"Alias: {token.get_alias()}")
             alias = token.get_alias()
             if alias:
                 # handle column alias, including alias for column name or Case, Function
@@ -221,10 +221,13 @@ class Column:
                     return Column(alias, source_columns=source_columns)
             else:
                 # select column name directly without alias
-                return Column(
-                    token.get_real_name(),
-                    source_columns=((token.get_real_name(), token.get_parent_name()),),
-                )
+                if token.get_real_name():
+                    return Column(
+                        token.get_real_name(),
+                        source_columns=(
+                            (token.get_real_name(), token.get_parent_name()),
+                        ),
+                    )
         else:
             # Wildcard, Case, Function without alias (thus not recognized as an Identifier)
             source_columns = Column._extract_source_columns(token)
