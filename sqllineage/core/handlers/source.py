@@ -64,7 +64,7 @@ class SourceHandler(NextTokenBaseHandler):
                     % (type(token).__name__, token)
                 )
             for child_token in list(token.flatten()):
-                if child_token.value == "table":
+                if child_token.normalized.lower() == "table":
                     break
             else:
                 holder.add_write(Table.of(token.token_first(skip_cm=True)))

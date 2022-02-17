@@ -21,6 +21,33 @@ from sqlparse.sql import (
 from sqlparse.utils import imt
 
 
+class Database:
+    unknown = "<default>"
+
+    def __init__(self, name: str = unknown):
+        """
+        Data Class for Database
+
+        :param name: database name
+        """
+        self.raw_name = escape_identifier_name(name)
+
+    def __str__(self):
+        return self.raw_name.lower()
+
+    def __repr__(self):
+        return "Database: " + str(self)
+
+    def __eq__(self, other):
+        return type(self) is type(other) and str(self) == str(other)
+
+    def __hash__(self):
+        return hash(str(self))
+
+    def __bool__(self):
+        return str(self) != self.unknown
+
+
 class Schema:
     unknown = "<default>"
 
@@ -49,28 +76,50 @@ class Schema:
 
 
 class Table:
-    def __init__(self, name: str, schema: Schema = Schema(), **kwargs):
+    def __init__(
+        self,
+        name: str,
+        schema: Schema = Schema(),
+        database: Database = Database(),
+        **kwargs,
+    ):
         """
         Data Class for Table
 
         :param name: table name
         :param schema: schema as defined by :class:`Schema`
+        :param schema: database as defined by :class:`Database`
         """
-        if "." not in name:
-            self.schema = schema
-            self.raw_name = escape_identifier_name(name)
-        else:
-            schema_name, table_name = name.rsplit(".", 1)
-            if len(schema_name.split(".")) > 2:
-                # allow db.schema as schema_name, but a.b.c as schema_name is forbidden
-                raise SQLLineageException("Invalid format for table name: %s.", name)
+        if len(name.split(".")) == 3:
+            database_name, schema_name, table_name = name.split(".")
+            self.database = Database(database_name)
             self.schema = Schema(schema_name)
             self.raw_name = escape_identifier_name(table_name)
             if schema:
                 warnings.warn("Name is in schema.table format, schema param is ignored")
+            if database:
+                warnings.warn(
+                    "Name is in database.schema.table format, database param is ignored"
+                )
+        elif (len(name.split("."))) == 2:
+            schema_name, table_name = name.split(".")
+            self.database = database
+            self.schema = Schema(schema_name)
+            self.raw_name = escape_identifier_name(table_name)
+            if schema:
+                warnings.warn("Name is in schema.table format, schema param is ignored")
+        elif "." not in name:
+            self.database = database
+            self.schema = schema
+            self.raw_name = escape_identifier_name(name)
+        else:
+            # allow db.schema as schema_name, but a.b.c as schema_name is forbidden
+            raise SQLLineageException("Invalid format for table name: %s.", name)
         self.alias = kwargs.pop("alias", self.raw_name)
 
     def __str__(self):
+        if self.database:
+            return f"{self.database}.{self.schema}.{self.raw_name.lower()}"
         return f"{self.schema}.{self.raw_name.lower()}"
 
     def __repr__(self):
@@ -203,7 +252,6 @@ class Column:
     @staticmethod
     def of(token: Token):
         if isinstance(token, Identifier):
-            print(f"Alias: {token.get_alias()}")
             alias = token.get_alias()
             if alias:
                 # handle column alias, including alias for column name or Case, Function
