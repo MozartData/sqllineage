@@ -98,9 +98,7 @@ class Table:
             if schema:
                 warnings.warn("Name is in schema.table format, schema param is ignored")
             if database:
-                warnings.warn(
-                    "Name is in database.schema.table format, database param is ignored"
-                )
+                warnings.warn("Name is in database.schema.table format, database param is ignored")
         elif (len(name.split("."))) == 2:
             schema_name, table_name = name.split(".")
             self.database = database
@@ -119,8 +117,8 @@ class Table:
 
     def __str__(self):
         if self.database:
-            return f"{self.database}.{self.schema}.{self.raw_name.lower()}"
-        return f"{self.schema}.{self.raw_name.lower()}"
+            return f"{self.database}.{self.schema}.{self.raw_name}"
+        return f"{self.schema}.{self.raw_name}"
 
     def __repr__(self):
         return "Table: " + str(self)
@@ -140,17 +138,15 @@ class Table:
             start=len(identifier.tokens),
             reverse=True,
         )
-        real_name = identifier._get_first_name(dot_idx, real_name=True)
+        # If table_token has quotes, return its value as is
+        _, table_token = identifier.token_next(dot_idx, skip_cm=True)
+        if '"' in table_token.value:
+            real_name = table_token.value
+        else:
+            real_name = identifier._get_first_name(dot_idx, real_name=True)
         # rewrite identifier's get_parent_name accordingly
         parent_name = (
-            "".join(
-                [
-                    escape_identifier_name(token.value)
-                    for token in identifier.tokens[:dot_idx]
-                ]
-            )
-            if dot_idx
-            else None
+            "".join([escape_identifier_name(token.value) for token in identifier.tokens[:dot_idx]]) if dot_idx else None
         )
         if parent_name and len(parent_name.split(".")) == 2:
             database, schema = parent_name.split(".")
@@ -278,9 +274,7 @@ class Column:
                 if token.get_real_name():
                     return Column(
                         token.get_real_name(),
-                        source_columns=(
-                            (token.get_real_name(), token.get_parent_name()),
-                        ),
+                        source_columns=((token.get_real_name(), token.get_parent_name()),),
                     )
         else:
             # Wildcard, Case, Function without alias (thus not recognized as an Identifier)
@@ -291,70 +285,34 @@ class Column:
     def _extract_source_columns(token: Token) -> List[ColumnQualifierTuple]:
         if isinstance(token, Function):
             # max(col1) AS col2
-            source_columns = [
-                cqt
-                for tk in get_parameters(token)
-                for cqt in Column._extract_source_columns(tk)
-            ]
+            source_columns = [cqt for tk in get_parameters(token) for cqt in Column._extract_source_columns(tk)]
         elif isinstance(token, Parenthesis):
             # This is to avoid circular import
             from sqllineage.runner import LineageRunner
 
             # (SELECT avg(col1) AS col1 FROM tab3), used after WHEN or THEN in CASE clause
-            src_cols = [
-                lineage[0]
-                for lineage in LineageRunner(token.value).get_column_lineage(
-                    exclude_subquery=False
-                )
-            ]
-            source_columns = [
-                ColumnQualifierTuple(src_col.raw_name, src_col.parent.raw_name)
-                for src_col in src_cols
-            ]
+            src_cols = [lineage[0] for lineage in LineageRunner(token.value).get_column_lineage(exclude_subquery=False)]
+            source_columns = [ColumnQualifierTuple(src_col.raw_name, src_col.parent.raw_name) for src_col in src_cols]
         elif isinstance(token, Operation):
             # col1 + col2 AS col3
-            source_columns = [
-                cqt
-                for tk in token.get_sublists()
-                for cqt in Column._extract_source_columns(tk)
-            ]
+            source_columns = [cqt for tk in token.get_sublists() for cqt in Column._extract_source_columns(tk)]
         elif isinstance(token, Case):
             # CASE WHEN col1 = 2 THEN "V1" WHEN col1 = "2" THEN "V2" END AS col2
-            source_columns = [
-                cqt
-                for tk in token.get_sublists()
-                for cqt in Column._extract_source_columns(tk)
-            ]
+            source_columns = [cqt for tk in token.get_sublists() for cqt in Column._extract_source_columns(tk)]
         elif isinstance(token, Comparison):
-            source_columns = Column._extract_source_columns(
-                token.left
-            ) + Column._extract_source_columns(token.right)
+            source_columns = Column._extract_source_columns(token.left) + Column._extract_source_columns(token.right)
         elif isinstance(token, IdentifierList):
-            source_columns = [
-                cqt
-                for tk in token.get_sublists()
-                for cqt in Column._extract_source_columns(tk)
-            ]
+            source_columns = [cqt for tk in token.get_sublists() for cqt in Column._extract_source_columns(tk)]
         elif isinstance(token, Identifier):
             if token.get_real_name():
                 # col1 AS col2
-                source_columns = [
-                    ColumnQualifierTuple(token.get_real_name(), token.get_parent_name())
-                ]
+                source_columns = [ColumnQualifierTuple(token.get_real_name(), token.get_parent_name())]
             else:
                 # col1=1 AS int
-                source_columns = [
-                    cqt
-                    for tk in token.get_sublists()
-                    for cqt in Column._extract_source_columns(tk)
-                ]
+                source_columns = [cqt for tk in token.get_sublists() for cqt in Column._extract_source_columns(tk)]
         else:
             # Handle literals other than *
-            if (
-                token.ttype is not None
-                and token.ttype[0] == T.Literal[0]
-                and token.value != "*"
-            ):
+            if token.ttype is not None and token.ttype[0] == T.Literal[0] and token.value != "*":
                 source_columns = []
             else:
                 # select *
@@ -389,9 +347,7 @@ class Column:
                     source_columns.add(src_col)
             else:
                 if alias_mapping.get(qualifier):
-                    source_columns.add(
-                        _to_src_col(src_col, alias_mapping.get(qualifier))
-                    )
+                    source_columns.add(_to_src_col(src_col, alias_mapping.get(qualifier)))
                 else:
                     source_columns.add(_to_src_col(src_col, Table(qualifier)))
         return source_columns

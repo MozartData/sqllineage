@@ -16,7 +16,7 @@ def _monkey_patch() -> None:
 _monkey_patch()
 
 NAME = "sqllineage"
-VERSION = "101.0.3"
+VERSION = "101.0.4"
 DEFAULT_LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
