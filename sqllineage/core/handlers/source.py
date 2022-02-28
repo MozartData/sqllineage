@@ -121,11 +121,12 @@ class SourceHandler(NextTokenBaseHandler):
                 tgt_tbl = list(holder.write)[0]
             if tgt_tbl:
                 for tgt_col in col_grp:
-                    tgt_col.parent = tgt_tbl
-                    for src_col in tgt_col.to_source_columns(
-                        self._get_alias_mapping_from_table_group(tbl_grp, holder)
-                    ):
-                        holder.add_column_lineage(src_col, tgt_col)
+                    if tgt_col:
+                        tgt_col.parent = tgt_tbl
+                        for src_col in tgt_col.to_source_columns(
+                            self._get_alias_mapping_from_table_group(tbl_grp, holder)
+                        ):
+                            holder.add_column_lineage(src_col, tgt_col)
 
     @classmethod
     def _get_dataset_from_identifier(

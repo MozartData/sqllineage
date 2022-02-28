@@ -1,7 +1,7 @@
 import argparse
 import logging
 
-from sqllineage import DEFAULT_HOST, DEFAULT_PORT
+from sqllineage import DEFAULT_PORT
 from sqllineage.runner import LineageRunner
 from sqllineage.utils.constant import LineageLevel
 from sqllineage.utils.helpers import extract_sql_from_args
@@ -42,14 +42,6 @@ def main(args=None) -> None:
         action="store_true",
     )
     parser.add_argument(
-        "-H",
-        "--host",
-        help="the host visualization webserver will be bind to",
-        type=str,
-        default=DEFAULT_HOST,
-        metavar="<hostname>",
-    )
-    parser.add_argument(
         "-p",
         "--port",
         help="the port visualization webserver will be listening on",
@@ -74,7 +66,7 @@ def main(args=None) -> None:
             },
         )
         if args.graph_visualization:
-            runner.draw()
+            pass
         elif args.level == LineageLevel.COLUMN:
             runner.print_column_lineage()
         else:
