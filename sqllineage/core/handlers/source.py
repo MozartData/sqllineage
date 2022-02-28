@@ -1,12 +1,6 @@
 import re
 from typing import Dict, List, Union
 
-from sqllineage.core.handlers.base import NextTokenBaseHandler
-from sqllineage.core.holders import SubQueryLineageHolder
-from sqllineage.core.models import Column, Path, SubQuery, Table
-from sqllineage.exceptions import SQLLineageException
-from sqllineage.utils.constant import EdgeType
-from sqllineage.utils.sqlparse import get_subquery_parentheses
 from sqlparse.sql import (
     Case,
     Function,
@@ -17,6 +11,13 @@ from sqlparse.sql import (
     Token,
 )
 from sqlparse.tokens import Literal, Wildcard
+
+from sqllineage.core.handlers.base import NextTokenBaseHandler
+from sqllineage.core.holders import SubQueryLineageHolder
+from sqllineage.core.models import Column, Path, SubQuery, Table
+from sqllineage.exceptions import SQLLineageException
+from sqllineage.utils.constant import EdgeType
+from sqllineage.utils.sqlparse import get_subquery_parentheses
 
 
 class SourceHandler(NextTokenBaseHandler):

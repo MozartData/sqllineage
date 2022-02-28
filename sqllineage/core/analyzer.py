@@ -12,10 +12,7 @@ from sqlparse.sql import (
     Where,
 )
 
-from sqllineage.core.handlers.base import (
-    CurrentTokenBaseHandler,
-    NextTokenBaseHandler,
-)
+from sqllineage.core.handlers.base import CurrentTokenBaseHandler, NextTokenBaseHandler
 from sqllineage.core.holders import StatementLineageHolder, SubQueryLineageHolder
 from sqllineage.core.models import SubQuery, Table
 from sqllineage.utils.sqlparse import get_subquery_parentheses, is_subquery

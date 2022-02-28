@@ -1,10 +1,6 @@
 import warnings
 from typing import Dict, List, Optional, Set, Union
 
-from sqllineage.exceptions import SQLLineageException
-from sqllineage.utils.entities import ColumnQualifierTuple
-from sqllineage.utils.helpers import escape_identifier_name
-from sqllineage.utils.sqlparse import get_parameters
 from sqlparse import tokens as T
 from sqlparse.engine import grouping
 from sqlparse.sql import (
@@ -19,6 +15,11 @@ from sqlparse.sql import (
     TokenList,
 )
 from sqlparse.utils import imt
+
+from sqllineage.exceptions import SQLLineageException
+from sqllineage.utils.entities import ColumnQualifierTuple
+from sqllineage.utils.helpers import escape_identifier_name
+from sqllineage.utils.sqlparse import get_parameters
 
 
 class Database:
@@ -321,10 +322,15 @@ class Column:
                     exclude_subquery=False
                 )
             ]
-            source_columns = [
-                ColumnQualifierTuple(src_col.raw_name, src_col.parent.raw_name)
-                for src_col in src_cols
-            ]
+
+            source_columns = []
+            for src_col in src_cols:
+                if src_col.parent:
+                    source_columns.append(
+                        ColumnQualifierTuple(src_col.raw_name, src_col.parent.raw_name)
+                    )
+                else:
+                    source_columns.append(ColumnQualifierTuple(src_col.raw_name, None))
         elif isinstance(token, Operation):
             # col1 + col2 AS col3
             source_columns = [

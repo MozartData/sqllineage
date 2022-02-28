@@ -175,7 +175,7 @@ class SQLLineageHolder(ColumnLineageMixin):
         return self.graph.subgraph(column_nodes)
 
     @property
-    def source_tables(self) -> Set[Table]:
+    def source_tables(self) -> Set[Union[Table, Path]]:
         """
         a list of source :class:`sqllineage.models.Table`
         """
@@ -186,7 +186,11 @@ class SQLLineageHolder(ColumnLineageMixin):
         )
         source_tables |= self._selfloop_tables
         source_tables |= self._sourceonly_tables
-        return source_tables
+        return {
+            source_table
+            for source_table in source_tables
+            if isinstance(source_table, Table) or isinstance(source_table, Path)
+        }
 
     @property
     def target_tables(self) -> Set[Table]:

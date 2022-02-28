@@ -10,7 +10,6 @@ from sqllineage.core.models import Column, Table
 from sqllineage.io import to_cytoscape
 from sqllineage.utils.constant import LineageLevel
 
-
 logger = logging.getLogger(__name__)
 
 
